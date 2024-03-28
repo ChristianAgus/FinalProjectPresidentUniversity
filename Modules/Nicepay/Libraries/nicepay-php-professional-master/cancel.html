@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>NICEPAY - Secure Checkout</title>
+    <link rel='stylesheet' href='index.css' type='text/css'/>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div class="wrapper">
+
+    <div class="form" id="va-form">
+        <form action="cancel-va.php" method="post">
+            <h2 class="form-title">Bank Transfer</h2>
+            <h4>Cancel VA Transaction</h4>
+            <hr>
+            <input name="tXid" type="text" class="input-std" id="name" placeholder="tXid">
+            <input name="amt" type="text" class="input-std" id="name" placeholder="amount">
+            <hr>
+
+            <input type="hidden" name="payMethod" value="02">
+            <button type="submit" class="btn-submit" id="va">Make VA Expired!</button>
+        </form>
+    </div>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.5.1.min.js?ver=3.5"></script>
+<script type="text/javascript" src="index.js"></script>
+<body>
+</html>
