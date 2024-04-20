@@ -30,6 +30,15 @@ class ProductController extends Controller
             ->addColumn('size', function ($data) {
                 return $data->size." ".$data->uom;
             })
+            ->addColumn('properti', function ($data) {
+                $stockLabel = "<label>Stock:</label> ";
+                $stockValue = $data->stock ? "<span class='badge bg-success'>" . $data->stock . "</span>" : "<span class='badge bg-danger'>Kosong</span>";
+                $stock = $stockLabel . $stockValue;
+            
+                $soldLabel = "<label>Sold:</label> " . ($data->sold ? $data->sold : "");
+                
+                return $stock . "<br>" . $soldLabel;
+            })
             ->addColumn('price', function ($data) {
                 return "Rp".number_format((float)$data->price, 0);
             })
@@ -40,13 +49,15 @@ class ProductController extends Controller
                     'category'       => $data->category_id,
                     'name'           => $data->name,
                     'size'           => $data->size,
+                    'stock'          => $data->stock,
                     'uom'            => $data->uom,
                     'description'    => $data->description,
                     'specification'  => $data->description,
                     'price'          => number_format((float)$data->price, 0),
                 ];
             
-                return "<button onclick='editModal(".json_encode($product_data).")' class='btn btn-sm btn-outline-primary' title='Edit'>Edit</button>";
+                return "<button onclick='editModal(".json_encode($product_data).")' class='btn btn-sm btn-outline-primary' title='Edit'>Edit</button>
+                <button data-url=\"" . route('delete.data', $data->id) . "\" class=\"btn btn-sm btn-outline-danger btn-square delete-btn\" title=\"Delete\"><i class=\"fa fa-trash\"></i></button>";
             })
             ->addColumn('action', function ($data) {
                 if ($data->status == "Active") {
@@ -58,7 +69,7 @@ class ProductController extends Controller
                 }
             })
             
-            ->rawColumns(['action', 'size', 'edit'])
+            ->rawColumns(['action', 'size', 'edit', 'properti'])
             ->make(true);
         }
         $data['category'] = MsCategory::orderBy('name', 'ASC')->get();
@@ -73,6 +84,7 @@ class ProductController extends Controller
             'name'          => 'required|string',
             'sku'           => 'required|unique:ms_products',
             'size'          => 'required',
+            'stock'         => 'required',
             'uom'           => 'required',
             'description'   => 'required',
             'specification' => 'required',
@@ -125,9 +137,19 @@ class ProductController extends Controller
             }
         }
     }
-
-    public function change_status($id) 
+    public function delete($id)
     {
+        $brand = MsProduct::findOrFail($id);
+        $brand->delete();
+
+        return response()->json(['message' => 'Data berhasil dihapus']);
+    }  
+    public function change_status ($id) 
+    {
+        $data=$request->all();
+        $limit=[
+            
+        ];
         $x = MsProduct::find($id);
         if($x->status == "Active") {
             $x->status = "Inactive";
@@ -156,6 +178,7 @@ class ProductController extends Controller
             'name'          => 'required|string',
             'sku'           => 'required|unique:ms_products,name,' . $id,
             'size'          => 'required',
+            'stock'          => 'required',
             'uom'           => 'required',
             'description'   => 'required',
             'specification' => 'required',
@@ -186,6 +209,7 @@ class ProductController extends Controller
                 $db_product->slug   = Str::slug($request->name);
 
                 $db_product->size           = $request->size;
+                $db_product->stock          = $request->stock;
                 $db_product->uom            = $request->uom;
                 $db_product->description    = $request->description;
                 $db_product->specification  = $request->specification;

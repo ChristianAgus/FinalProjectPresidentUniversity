@@ -49,6 +49,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'exhibition'], function(){
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::group(['prefix' => 'akun'], function(){
         Route::get('/user', [App\Http\Controllers\Backend\UserController::class, 'user'])->name('akun.user');
+        Route::get('/delete-data/{id}', [App\Http\Controllers\Backend\UserController::class,'delete'])->name('delet');
         Route::get('/profil', [App\Http\Controllers\Backend\UserController::class, 'profil'])->name('akun.profil');
         Route::post('/create', [App\Http\Controllers\Backend\UserController::class, 'create'])->name('akun.create');
         Route::put('/update/{id}', [App\Http\Controllers\Backend\UserController::class, 'update'])->name('akun.update');
@@ -60,7 +61,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'exhibition'], function(){
         Route::group(['prefix' => 'category'], function(){
             Route::get('/index', [App\Http\Controllers\Backend\CategoryController::class, 'index'])->name('category.index');
             Route::post('/create', [App\Http\Controllers\Backend\CategoryController::class, 'create'])->name('category.create');
-            Route::put('/update/{id}', [App\Http\Controllers\Backend\CategoryController::class, 'update'])->name('category.update');
+        Route::get('/delete-data/{id}', [App\Http\Controllers\Backend\CategoryController::class,'delete'])->name('delete');
+        Route::put('/update/{id}', [App\Http\Controllers\Backend\CategoryController::class, 'update'])->name('category.update');
             Route::get('/change_status/{id}', [App\Http\Controllers\Backend\CategoryController::class, 'change_status'])->name('category.change_status');
         });
 
@@ -69,13 +71,24 @@ Route::group(['middleware' => 'auth', 'prefix' => 'exhibition'], function(){
             Route::post('/create', [App\Http\Controllers\Backend\ProductController::class, 'create'])->name('product.create');
             Route::put('/update/{id}', [App\Http\Controllers\Backend\ProductController::class, 'update'])->name('product.update');
             Route::get('/change_status/{id}', [App\Http\Controllers\Backend\ProductController::class, 'change_status'])->name('product.change_status');
+            Route::get('/delete-data/{id}', [App\Http\Controllers\Backend\ProductController::class,'delete'])->name('delete.data');
+
         });
 
         Route::group(['prefix' => 'history'], function(){
             Route::get('/invoice/{id}', [App\Http\Controllers\Backend\OrderController::class, 'viewinvoice'])->name('order.invoice');
             Route::get('/change_status/{id}', [App\Http\Controllers\Backend\OrderController::class, 'change_status'])->name('order.change_status');
+            Route::get('/change_status/{id}/cancel',  [App\Http\Controllers\Backend\OrderController::class, 'cancelStatus'])->name('cancel-status');
             Route::get('/order', [App\Http\Controllers\Backend\OrderController::class, 'index'])->name('order.index');
+            Route::get('/order-report', [App\Http\Controllers\Backend\OrderController::class, 'excel'])->name('report.excel');
+            Route::post('/report', [App\Http\Controllers\Backend\OrderController::class, 'OrderReport'])->name('reports.excel');
+            
         });
     });
 
 });
+
+// Route::get('/PRF-Report', function () {
+//         return view('prf.prfreport');
+//     })->name('PRFReport')->middleware('auth');
+//     Route::post('/PRF-Report-Excel', 'PrfController@PRFReporT')->name('PRFReportExcel')->middleware('auth');

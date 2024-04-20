@@ -70,7 +70,7 @@
                         <!-- <li>Subtotal <span>$454.98</span></li> -->
                         <li>Total <span id="grand_total">Rp{{ number_format($grand_cart, 0) }}</span></li>
                     </ul>
-                    <a href="{{ route('frontend.get_order') }}" class="primary-btn">PROCEED TO CHECKOUT</a>
+                    <a href="{{ route('frontend.get_order') }}" class="primary-btn stock">PROCEED TO CHECKOUT</a>
                 </div>
             </div>
         </div>
@@ -78,8 +78,12 @@
 </section>
 @endsection
 
-
+@section('css')
+<link href="{{ asset('assets/toastr/build/toastr.min.css') }}" rel="stylesheet">
+@endsection
 @section('script')
+<script src="{{ asset('assets/toastr/build/toastr.min.js') }}"></script>
+
 <script>
     $(document).ready(function () {
         $.ajaxSetup({
@@ -117,16 +121,20 @@
             type: 'POST',
             data:{orderDetID:orderDetailID, qty:qty, orderID:orderID},
             success: function (json) {
-                if (json.success == true ){
-                    $button.parent().find('input').val(qty);
-                    $('#sub_total'+orderDetailID).html(json.sub_total);
-                    $('#grand_total').html(json.grand_total);
-                    $('#grand_cart,#grand_cart_m').html(json.grand_total);
-                } else {
-                    alert(json.message);
-                    $button.parent().find('input').val(oldValue);
-                }
-            }, error: function (xhr, ajaxOptions, thrownError) {
+                if (json.success == true) {
+            $button.parent().find('input').val(qty);
+            $('#sub_total' + orderDetailID).html(json.sub_total);
+            $('#grand_total').html(json.grand_total);
+            $('#grand_cart,#grand_cart_m').html(json.grand_total);
+        } else {
+            if (json.hasOwnProperty('stock_exceeded') && json.stock_exceeded == true) {
+                toastr.error("Jumlah yang diminta melebihi stok yang tersedia.");
+            } else {
+                toastr.error(json.message);
+            }
+            $button.parent().find('input').val(oldValue);
+        }
+    }, error: function (xhr, ajaxOptions, thrownError) {
                 var err = eval("(" + xhr.responseText + ")");
                 alert(err.message);
                 $button.parent().find('input').val(oldValue);

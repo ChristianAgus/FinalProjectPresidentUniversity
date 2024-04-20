@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use Yajra\Datatables\Datatables;
 use Illuminate\Http\Request;
-
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\Orders\OrdersReport;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\MsProduct;
 use DB;
 use Auth;
 
@@ -27,19 +29,22 @@ class OrderController extends Controller
             return DataTables::of($data)
             ->addColumn('grand_total', function ($data) {
                 return "Rp".number_format((float)$data->grand_total, 0);
-            })
+            })          
             ->addColumn('image', function ($data) {
-                $imageButton = "<a href=".asset('/uploads/frontend/proof_of_payment')."/".$data->proof_of_payment." class='btn btn-sm btn-outline-warning popup-image' title='Image'>Image</a>";
+                $imageButton = '';
+                if ($data->proof_of_payment !== null) {
+                    $imageButton = "<a href=".asset('/uploads/frontend/proof_of_payment')."/".$data->proof_of_payment." class='btn btn-sm btn-outline-warning popup-image' title='Image'>Image</a>";
+                }
                 
                 $pendingButton = '';
                 if ($data->status == "Order") {
                     $pendingButton = "
-                        <button data-color='#137e22' data-url=" . route('order.change_status', $data->id) . " data-status='Yes, Closed Order' class='btn btn-sm btn-outline-success btn-square js-change-status' title='Change to Closed'>Pending</button>
+                        <button data-color='#137e22' data-url=" . route('order.change_status', $data->id) . " data-status='Closed Order' class='btn btn-sm btn-outline-success btn-square js-change-status' title='Change to Closed'>Pending</button>
                     ";
                 }
             
                 return $imageButton . $pendingButton;
-            })
+            })            
             
             ->addColumn('status', function ($data) {
                 $statusLabel = '';
@@ -48,12 +53,15 @@ class OrderController extends Controller
                     $statusLabel = '<span class="badge bg-warning">Payment not complete</span>';
                 } elseif ($data->status == 'Closed') {
                     $statusLabel = '<span class="badge bg-success">Payment Complete</span>';
+                } elseif ($data->status == 'Canceled') {
+                    $statusLabel = '<span class="badge bg-danger">Canceled</span>';
                 } else {
                     $statusLabel = '<span class="badge bg-info">Waiting Create Oc number</span>';
                 }
             
                 return $statusLabel;
             })
+            
             
             ->addColumn('action', function ($data) {
                 $order_data = array(
@@ -66,9 +74,12 @@ class OrderController extends Controller
                     'pay_category'     => $data->pay_category
                 );
             
-                return "
-                    <a href='" . route('order.invoice', $data->id) . "' class='btn btn-sm btn-outline-info btn-square' title='View Invoice'><i class='fa-solid fa-print'></i> Invoice</a>
-                    <a href='" . route('frontendadmin.download_invoice', $data->oc_number) . "' class='btn btn-sm btn-outline-info btn-square' title='View Invoice'><i class='fa-solid fa-print'></i> </a>" ;
+                if ($data->oc_number !== null) {
+                    return "
+                        <a href='" . route('order.invoice', $data->id) . "' class='btn btn-sm btn-outline-info btn-square' title='View Invoice'><i class='fa-solid fa-print'></i> Invoice</a>
+                        <a href='" . route('frontendadmin.download_invoice', $data->oc_number) . "' class='btn btn-sm btn-outline-info btn-square' title='View Invoice'><i class='fa-solid fa-print'></i> </a>";
+                }
+                return '';
             })
             
             
@@ -95,6 +106,38 @@ class OrderController extends Controller
         }
     }
 
+    public function cancelStatus(Request $request, $id)
+    {
+        $order = Order::find($id);
+        
+        if ($order->status == "Order") {
+            $order->status = "Canceled";
+            $order->save();
+            
+            $orderDetails = OrderDetail::where('order_id', $id)->get();
+        
+            foreach ($orderDetails as $orderDetail) {
+                $product = MsProduct::find($orderDetail->product_id);
+                if ($product) {
+                    $product->stock += $orderDetail->qty;
+                    $product->sold -= $orderDetail->qty;
+                    $product->save();
+                }
+                $orderDetail->update(['qty' => 0]);
+            }
+            
+            return redirect()->back()->with([
+                'type' => 'success',
+                'message' => '<i class="em em-email em-svg mr-2"></i>Successfully canceled order ' . $order->name
+            ]);
+        } else {
+            return redirect()->back()->with([
+                'type' => 'error',
+                'message' => '<i class="em em-email em-svg mr-2"></i>Order cannot be canceled because it is not in "Order" status'
+            ]);
+        }
+    }
+    
     public function viewInvoice($id)
     {
         $data['test']      = Order::where('id', $id)->first();
@@ -110,6 +153,15 @@ class OrderController extends Controller
     public function OrderDetail()
     {
         return $this->hasMany(OrderDetail::class, 'order_id')->withTrashed();
+    }
+
+    public function OrderReport()
+    {
+        return Excel::download(new OrdersReport, "Report Orders.xlsx");
+    }
+
+    public function excel(){
+        return view('backend.master.history.reportorders');
     }
 
 }

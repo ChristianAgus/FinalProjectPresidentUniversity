@@ -3,6 +3,17 @@
 @section('content')
 <div class="container">
     <div class="row my-3">
+        @if($order->payment_status == 0 && $order->status == "Canceled")
+        <div class="col-md-12">
+        <div class="alert alert-danger">
+            Your Transaction Canceled is not in accordance with Payment
+            <b id="order-number">
+                {{ $order->oc_number }} 
+            </b>
+            <button type="button" class="btn btn-sm btn-secondary" id="copy-button" onclick="copyToClipboard()" style="padding: 0.2rem .5rem;font-size: 0.7rem;line-height: 1;border-radius: .2rem;">Copy</button>
+        </div>
+    </div>
+        @endif
         @if($order->payment_status == 1 && $order->status == "Closed")
         <div class="col-md-12 text-right mb-2">
             <a href="{{ route('frontend.download_invoice', $order->oc_number) }}" class="btn btn-primary"><i class="fa fa-download"></i></a>

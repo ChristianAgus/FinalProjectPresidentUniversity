@@ -62,6 +62,12 @@ $type = $type ?? '';
                                 </div>
                             </div>
                             <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">stock *</label>
+                                    <input type="number" class="form-control" name="stock" id="{{$type}}stock"  placeholder="Enter Stock Product (Tidak Boleh Kosong) ..."  required>
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="col mb-3">
                                     <label class="form-label">Description *</label>
                                     <textarea class="form-control" id="{{$type}}description" required name="description" rows="4" placeholder="Description.."></textarea>

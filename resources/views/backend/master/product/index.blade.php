@@ -23,6 +23,7 @@
                     <th>SKU</th>
                     <th>Product</th>
                     <th>Size</th>
+                    <th>Information</th>
                     <th style="width: 15%;">Price</th>
                     <th style="width: 15%;">Action</th>
                   </tr>
@@ -65,6 +66,42 @@ $(document).ready(function () {
 
         $("#dataTable").DataTable({
             drawCallback: function () {
+                $('.delete-btn').on('click', function(){
+                        var routers = $(this).data("url");
+                        swal.fire({
+                            title: 'Anda Yakin?',
+                            text: 'Data yang dihapus tidak dapat dikembalikan lagi!',
+                            type: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d26a5c',
+                            confirmButtonText: 'Iya, hapus!',
+                            html: false,
+                            preConfirm: function() {
+                                return new Promise(function (resolve) {
+                                    setTimeout(function () {
+                                        resolve();
+                                    }, 50);
+                                });
+                            }
+                        }).then(function(result){
+                            if (result.value) {
+                                $.ajax({
+                                    url: routers,
+                                    type: 'GET',
+                                    success: function (data) {
+                                        $("#dataTable").DataTable().ajax.reload();
+                                    }, error: function(XMLHttpRequest, textStatus, errorThrown) { 
+                                        alert(errorThrown);
+                                    },    
+                                    cache: false,
+                                    contentType: false,
+                                    processData: false
+                                });
+                            } else if (result.dismiss === 'cancel') {
+                                swal.fire('Cancelled', 'Your data is safe :)', 'error');
+                                        }
+                                    });
+                                });
                 $('.popup-image').magnificPopup({
                     type: 'image',
                 });
@@ -116,9 +153,9 @@ $(document).ready(function () {
                 {data: 'category', name: 'ms_categories.name'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
                 {data: 'sku', name: 'ms_products.sku'},
-
                 {data: 'name', name: 'ms_products.name'},
                 {data: 'size', name: 'ms_products.uom'},
+                {data: 'properti', name: 'ms_products.stock'},
                 {data: 'price', name: 'ms_products.price'},
                 {data: 'edit', name: 'edit', orderable: false, searchable: false}
             ],

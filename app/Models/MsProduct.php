@@ -19,6 +19,8 @@ class MsProduct extends Model
         'description',
         'specification',
         'price',
+        'stock',
+        'sold',
         'image',
         'status',
         'cat_name'

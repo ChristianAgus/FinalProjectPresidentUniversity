@@ -35,6 +35,12 @@
         <!-- Side Navigation -->
         <div class="content-side content-side-full">
           <ul class="nav-main">
+          <li class="nav-main-item">
+            <a class="nav-main-link {{ request()->is('exhibition/dashboard') ? 'active' : '' }}" href="{{ route('home') }}">
+              <i class="nav-main-link-icon fa fa-house-user"></i>
+              <span class="nav-main-link-name">Dashboard</span>
+            </a>
+          </li>
             @if(auth()->check() && auth()->user()->role == 'Admin')
             <li class="nav-main-item">
                 <a class="nav-main-link {{ request()->is('exhibition/akun/user') ? 'active' : '' }}" href="{{ route('akun.user') }}">
@@ -72,6 +78,19 @@
                 <li class="nav-main-item {{ request()->is('exhibition/history') ? 'active' : '' }}">
                   <a class="nav-main-link {{ request()->is('exhibition/master/history/order') || request()->is('exhibition/master/history/order') ? 'active' : '' }}" href="{{ route('order.index') }}">
                     <span class="nav-main-link-name">Order</span>
+                  </a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-main-item">
+              <a class="nav-main-link nav-main-link-submenu" data-toggle="submenu" aria-haspopup="true" aria-expanded="false" href="#">
+                <i class="nav-main-link-icon fa fa-briefcase"></i>
+                <span class="nav-main-link-name">Create Order</span>
+              </a>
+              <ul class="nav-main-submenu">
+                <li class="nav-main-item {{ request()->is('exhibition/history') ? 'active' : '' }}">
+                  <a class="nav-main-link {{ request()->is('exhibition/master/history/order') || request()->is('exhibition/master/history/order') ? 'active' : '' }}" href="{{ route('frontendadmin.home') }}">
+                    <span class="nav-main-link-name">Create</span>
                   </a>
                 </li>
               </ul>

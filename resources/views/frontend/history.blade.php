@@ -15,6 +15,11 @@
                                     <div class="card-body">
                                         <h5 class="card-title">{{ $order->oc_number }}</h5>
                                         <p class="card-text">Price: Rp{{ number_format($order->grand_total, 0) }}</p>
+                                        @if($order->payment_status == 0 && $order->status == "Canceled")
+                                        <div class="alert alert-danger" role="alert">
+                                            Your Transaction Canceled is not in accordance with Payment
+                                        </div>
+                                        @endif
                                         @if($order->payment_status == 0 && $order->status == "Order")
                                             <div class="alert alert-warning" role="alert">
                                                 Your transaction is pending confirmation from the admin. Please present this to the sales representative.

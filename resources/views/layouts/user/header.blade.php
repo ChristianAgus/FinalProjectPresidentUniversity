@@ -71,7 +71,20 @@
                     <a href="{{ Auth::check() ? route('frontendadmin.home') : route('frontend.home') }}"><img src="{{ asset('assets/img/logo_400.png') }}" style="height:50px;" alt="Logo Haldinfoods"></a>
                 </div>
             </div>
+            @if(!Auth::check())
+            <div class="wrap_cart col-4">
+                <a href="{{ route('login') }}">
+                    <span class="header__cart">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </span>
+                </a>
+            </div>
+            @endif
+            @if(Auth::check())
             <div class="wrap_cart col-7">
+            @else
+            <div class="wrap_cart col-3">
+            @endif
                 <a href="{{ Auth::check() ? route('frontendadmin.get_cart') : route('frontend.get_cart') }}">
                     <span class="header__cart">
                         <i class="fas fa-shopping-cart"></i> <span id="count_cart">{{ $count_cart }}</span>
@@ -80,6 +93,7 @@
                 </a>
             </div>
             
+            
             <div class="col-2">
                 <a class="humberger__open _custom">
                     <i class="fa fa-bars"></i>
@@ -87,5 +101,6 @@
             </div>
         </div>
     </div>
+    
 
 </header>

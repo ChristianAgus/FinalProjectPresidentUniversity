@@ -8,6 +8,7 @@ use Yajra\Datatables\Datatables;
 use Illuminate\Support\Str;
 
 use App\Models\MsCategory;
+use App\Models\MsProduct;
 use Carbon\Carbon;
 use DB;
 
@@ -34,7 +35,8 @@ class CategoryController extends Controller
                         'id'   => $data->id,
                         'name' => $data->name
                     ];
-                    return "<button onclick='editModal(".json_encode($category_data).")' class='btn btn-sm btn-outline-primary' title='Edit'>Edit</button>";
+                    return "<button onclick='editModal(".json_encode($category_data).")' class='btn btn-sm btn-outline-primary' title='Edit'>Edit</button>
+                    <button data-url=\"" . route('delete', $data->id) . "\" class=\"btn btn-sm btn-outline-danger btn-square delete-btn\" title=\"Delete\"><i class=\"fa fa-trash\"></i></button>";
                 })
                 ->addColumn('action', function ($data) {
                     if ($data->status == "Active") {
@@ -60,7 +62,14 @@ class CategoryController extends Controller
         }
         return view('backend.master.category.index');
     }
+    public function delete($id)
+    {
+        $brand = MsCategory::findOrFail($id);
+        MsProduct::where('category_id', $brand->id)->delete();
+        $brand->delete();
 
+        return response()->json(['message' => 'Data berhasil dihapus']);
+    }  
     public function create(Request $request)
     {
         $data=$request->all();

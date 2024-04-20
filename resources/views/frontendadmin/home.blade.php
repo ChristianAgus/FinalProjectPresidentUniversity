@@ -41,6 +41,8 @@
                                  data-specification="{{ $products->specification }}"
                                  data-price="{{ $products->price }}" 
                                  data-image="{{ !empty($products->image) && file_exists(public_path('uploads/master/product/image/'.$products->image)) ? asset('uploads/master/product/image/'.$products->image) : asset('assets/img/loading.png') }}" 
+                                 data-stck="{{$products->stock}}"
+                                 data-sld="{{$products->sold}}"
                                  >
                             <img class="img-fluid rounded-top" 
                                  src="{{ !empty($products->image) && file_exists(public_path('uploads/master/product/image/'.$products->image)) ? asset('uploads/master/product/image/'.$products->image) : asset('assets/img/loading.png') }}" 
@@ -51,12 +53,27 @@
                     </div>
                         <h4 class="font-size-h5 mb-10 clamp-text" data-toggle="tooltip" title="{{ $products->name }}">{{ $products->name }}</h4>
                         <i class="font-size-h1 font-w300 mb-5 text-success">Rp{{ number_format($products->price, 0) }}</i><br><br>
+                        @if ($products->sold && $products->sold > 0)
+                            <i class="text-success" style="font-size: 12px;"></i>
+                            <span class="sold-text">{{ $products->sold }} Terjual</span><br>
+                        @endif
                     <div class="rating-shop-container">
                         <div class="rating-container">
-                            <span class="in-stock" style="color: #28a745;">In Stock <i class="fa fa-check-circle"></i></span>  <br>
-                            <span class="rating-count">(50)</span>
+                            <span class="in-stock" style="color: {{ $products->stock ? '#28a745' : '#dc3545' }};">
+                                Stock: {{ $products->stock }}
+                                @if ($products->stock)
+                                    <i class="fa fa-check-circle"></i>
+                                @else
+                                    <i class="fa fa-times-circle"></i>
+                                @endif
+                            </span>  <br>
+                            <span class="rating-count"></span>
                         </div>
-                            <i class="fa fa-cart-plus shopping-cart-icon cart{{ $products->id }}" id="addcart" href="javascript:void(0)" data-id="{{ $products->id }}"></i>
+                        <i class="fa fa-cart-plus shopping-cart-icon cart{{ $products->id }}" id="addcart" href="javascript:void(0)"
+                            @if (!$products->stock)
+                                style="display: none;"
+                            @endif
+                            data-id="{{ $products->id }}"></i>                        
                     </div>
                 </div>
             </div>
@@ -79,6 +96,8 @@
             <div class="block-content block-content-full block-content-sm bg-body font-size-sm">
                 <h4 class="titlemodal" data-toggle="tooltip" id="name"></h4>
                 <i class="pricemodal font-w300 mb-5 text-success" id="price" style="font-size: 18px;"></i><br>
+                <i class=""  style="font-size: 15px;">Stock : <span id="stock"></span></i><br>
+                <i class=""  style="font-size: 15px;">Terjual : <span id="sold"></span></i><br>
             </div>
             <div class="block-content">
                 <div class="accordion">
@@ -359,6 +378,15 @@
         margin-right: auto;
     }
     }
+    #stock {
+    color: #28a745; 
+    font-weight: bold; 
+    }
+    #sold {
+        color: #28a745; 
+        font-weight: bold; 
+    }
+
 
 </style>
 @endsection
@@ -379,13 +407,22 @@ $(document).ready(function () {
         var desc = $(this).data('description');
         var spec = $(this).data('specification');
         var priceValue = $(this).data('price');
+        var stockValue = $(this).data('stck');
+        var soldValue = $(this).data('sld');
         var img = $(this).data('image');
         var formattedPrice = 'Rp. ' + parseFloat(priceValue).toLocaleString();
         $('.add-to-cart-btn').attr('data-id', DetId);
+        if (stockValue == null || stockValue == "") {
+        $('.add-to-cart-btn').hide();
+        } else {
+            $('.add-to-cart-btn').show();
+        }
         $('#modaldetail #name').html(name);
         $('#modaldetail #descript').html(desc);
         $('#modaldetail #specific').html(spec);
         $('#modaldetail #price').html(formattedPrice);
+        $('#modaldetail #stock').html(stockValue);
+        $('#modaldetail #sold').html(soldValue);
         $('#modaldetail #productImage').attr('src', img);
         $('#modaldetail').modal('show');
     });

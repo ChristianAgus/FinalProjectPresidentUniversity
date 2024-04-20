@@ -37,7 +37,8 @@ class UserController extends Controller
                         'phone'     => $data->phone_number,
                         'role'       => $data->role,
                     ];
-                    return "<button onclick='editModal(".json_encode($category_data).")' class='btn btn-sm btn-outline-primary' title='Edit'>Edit</button>";
+                    return "<button onclick='editModal(".json_encode($category_data).")' class='btn btn-sm btn-outline-primary' title='Edit'>Edit</button>
+                    <button data-url=\"" . route('delet', $data->id) . "\" class=\"btn btn-sm btn-outline-danger btn-square delete-btn\" title=\"Delete\"><i class=\"fa fa-trash\"></i></button>";
                 })
                 
                 ->rawColumns(['edit'])
@@ -50,7 +51,13 @@ class UserController extends Controller
     {
         return view('backend.akun.profil');
     }
+    public function delete($id)
+    {
+        $brand = User::findOrFail($id);
+        $brand->delete();
 
+        return response()->json(['message' => 'Data berhasil dihapus']);
+    }  
     public function create(Request $request)
     {
         $data = $request->all();

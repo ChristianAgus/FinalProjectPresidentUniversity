@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Frontend;
-
+use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use PHPMailer\PHPMailer\PHPMailer;
@@ -149,6 +149,7 @@ class HomeController extends Controller
             $db_order_detail->save();
 
             $db_order = Order::where('id', $request->orderID)->first();
+            $db_product = $db_order_detail->products; $stock = $db_product->stock; if ($request->qty > $stock) { return response()->json([ 'success' => false, 'message' => "Not Enough Stock." ]); } 
             $db_order->grand_total = OrderDetail::where('order_id', $request->orderID)->sum('sub_total');
             $db_order->save();
 
@@ -228,61 +229,93 @@ class HomeController extends Controller
 
     public function create_order(Request $request)
     {
-        $data=$request->all();
-        $limit=[
+        $data = $request->all();
+        $limit = [
             'full_name'         => 'required',
             'phone_number'      => 'required|numeric',
             'address'           => 'required',
             'pay_category'      => 'required',
             'proof_of_payment'  => 'image|mimes:jpeg,jpg,bmp,png,svg,gif'
         ];
-        $validator = Validator($data, $limit);
-        if ($validator->fails()){
+        $validator = Validator::make($data, $limit);
+        if ($validator->fails()) {
             return response()->json([
                 'success'   => false,
-                'message'	=> $validator->errors()->first()
+                'message'   => $validator->errors()->first()
             ]);
         } else {
             try {
                 DB::beginTransaction();
                 $db_order = Order::where([
-                    'id'            => $request->order_id,
-                    'status'        => 'Cart',
+                    'id'     => $request->order_id,
+                    'status' => 'Cart',
                 ])->first();
-                    if ($request->hasFile('proof_of_payment')) {
-                        $attachment = $request->file('proof_of_payment');
-                        $attachmentName = $attachment->getClientOriginalName();
-                        $attachmentName = preg_replace("/[#@!{}%$&*^()+_\-\s\?<>]/", '', $attachmentName);
-                        if (!empty($attachmentName)) {
-                            $attachment->move(public_path('/uploads/frontend/proof_of_payment'), $attachmentName);
-                        }
-                    } else {
-                        $attachmentName = null;
-                    }
-                    $currentDate = Carbon::now();
-                    $formattedDate = $currentDate->format('Ymd');
-                    
-                    $requestCount = Order::whereDate('created_at', $currentDate->toDateString())->count();
-                    $requestCode = $currentDate->format('ymd') . sprintf('%04d', $requestCount + 1);
-                    $paymentMethod = explode(";", $request->pay_category);
-                    $db_order->oc_number        = $requestCode;
-                    $db_order->proof_of_payment = $attachmentName;
-                    $db_order->order_date       = Carbon::now()->format("Y-m-d");
-                    $db_order->customer_name    = $request->full_name;
-                    $db_order->customer_phone   = $request->phone_number;
-                    $db_order->customer_address = $request->address;
-                    $db_order->status           = "Order";
-                    $db_order->pay_category     = $paymentMethod[0];
-                    $db_order->order_notes      = $request->order_notes;
-                    $db_order->save();
-                   
-                    DB::commit();
+                
+                if (!$db_order) {
                     return response()->json([
-                        'invoice' 		=> $db_order->oc_number,
-                        'success' 		=> true,
-                        'message'	    => 'The order has been successfully created.'
+                        'success'   => false,
+                        'message'   => 'Order not found or not in Cart status.'
                     ]);
-                    
+                }
+            
+                $orderDetails = OrderDetail::whereHas('order', function ($query) use ($request) {
+                    $query->where('id', $request->order_id);
+                })->get();
+            
+                if ($orderDetails->isEmpty()) {
+                    return response()->json([
+                        'success'   => false,
+                        'message'   => 'No order details found for this order.'
+                    ]);
+                }
+            
+                foreach ($orderDetails as $orderDetail) {
+                    $product = MsProduct::find($orderDetail->product_id);
+                    if ($product) {
+                        if ($product->stock < $orderDetail->qty) {
+                            throw new Exception("Insufficient stock for product: {$product->name}");
+                        }
+            
+                        $product->stock -= $orderDetail->qty;
+                        $product->sold += $orderDetail->qty;
+                        $product->save();
+                    }
+                }
+    
+                if ($request->hasFile('proof_of_payment')) {
+                    $attachment = $request->file('proof_of_payment');
+                    $attachmentName = $attachment->getClientOriginalName();
+                    $attachmentName = preg_replace("/[#@!{}%$&*^()+_\-\s\?<>]/", '', $attachmentName);
+                    if (!empty($attachmentName)) {
+                        $attachment->move(public_path('/uploads/frontend/proof_of_payment'), $attachmentName);
+                    }
+                } else {
+                    $attachmentName = null;
+                }
+                $currentDate = Carbon::now();
+                $formattedDate = $currentDate->format('Ymd');
+                
+                $requestCount = Order::whereDate('created_at', $currentDate->toDateString())->count();
+                $requestCode = $currentDate->format('ymd') . sprintf('%04d', $requestCount + 1);
+                $paymentMethod = explode(";", $request->pay_category);
+                $db_order->oc_number        = $requestCode;
+                $db_order->proof_of_payment = $attachmentName;
+                $db_order->order_date       = Carbon::now()->format("Y-m-d");
+                $db_order->customer_name    = $request->full_name;
+                $db_order->customer_phone   = $request->phone_number;
+                $db_order->customer_address = $request->address;
+                $db_order->status           = "Order";
+                $db_order->pay_category     = $paymentMethod[0];
+                $db_order->order_notes      = $request->order_notes;
+                $db_order->save();
+                
+                DB::commit();
+                return response()->json([
+                    'invoice'   => $db_order->oc_number,
+                    'success'   => true,
+                    'message'   => 'The order has been successfully created.'
+                ]);
+                
             } catch (Exception $e) {
                 DB::rollback();
                 return response()->json([
@@ -294,8 +327,8 @@ class HomeController extends Controller
     }
     public function get_history(Request $request)
     {
-        $cookies = $request->cookie(); // Mendapatkan cookies dari request saat ini
-        $data['orders'] = Order::whereIn('status', ['Order', 'Closed'])
+        $cookies = $request->cookie(); 
+        $data['orders'] = Order::whereIn('status', ['Order', 'Closed', 'Canceled'])
                                 ->where('cookies', json_encode($cookies))
                                 ->get();
         $data['count_cart'] = OrderDetail::whereHas('orders', function ($q) use ($cookies) {
